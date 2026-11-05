@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cutroom</title>
+<meta name="description" content="Edit a talking video on your phone: auto cuts, captions and a style. Free, and your video never leaves your device.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#14150f">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cutroom">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@600&family=Barlow+Semi+Condensed:wght@700&family=Inter:wght@400;600;800&family=Source+Serif+4:opsz,wght@8..60,600&display=swap">
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--ink:#1b1c17;--soft:#5d5f55;--line:#e3e1d8;--accent:#656D43;--on:#fff;--danger:#b4402f}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#121310;--card:#1c1d19;--ink:#ecebe4;--soft:#a5a79b;--line:#2e3029;--accent:#9aa46b;--on:#121310;--danger:#e8826f}}
+:root[data-theme="dark"]{--bg:#121310;--card:#1c1d19;--ink:#ecebe4;--soft:#a5a79b;--line:#2e3029;--accent:#9aa46b;--on:#121310;--danger:#e8826f}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:560px;margin:0 auto;padding:calc(20px + env(safe-area-inset-top)) 16px calc(110px + env(safe-area-inset-bottom))}
+h1{font-size:28px;line-height:1.15;margin:8px 0 6px}
+h2{font-size:22px;margin:4px 0 6px}
+p{margin:0 0 12px}.soft{color:var(--soft)}
+.brand{font-weight:800;letter-spacing:.02em;color:var(--accent);font-size:14px;text-transform:uppercase}
+.primary{display:block;width:100%;border:0;border-radius:14px;background:var(--accent);color:var(--on);font:700 18px Inter,system-ui,sans-serif;padding:16px;cursor:pointer;text-align:center;text-decoration:none}
+.secondary{display:block;width:100%;border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);font:600 16px Inter,system-ui,sans-serif;padding:13px;cursor:pointer;text-align:center;margin-top:10px}
+.dock{position:fixed;left:0;right:0;bottom:0;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(transparent,var(--bg) 30%)}
+.dock>*{max-width:528px;margin:0 auto}
+.hero{display:grid;gap:14px;margin-top:18vh}
+.steps{display:grid;gap:8px;margin:18px 0 0;padding:0;list-style:none;color:var(--soft);font-size:15px}
+.steps li::before{content:"✓ ";color:var(--accent);font-weight:700}
+.opt{display:flex;gap:10px;align-items:center;font-size:15px;color:var(--soft);margin-top:14px}
+.opt input{width:20px;height:20px;accent-color:var(--accent)}
+.track{height:10px;border-radius:99px;background:var(--line);overflow:hidden;margin:18px 0 10px}
+.bar{height:100%;width:0;background:var(--accent);transition:width .3s}
+.status{font-weight:600}
+.styles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+.style{display:flex;flex-direction:column;border:2px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);padding:0;overflow:hidden;cursor:pointer;text-align:left;font:inherit}
+.style[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.style img{width:100%;aspect-ratio:9/12;object-fit:cover;background:#000;display:block}
+.style span{padding:8px 10px 10px;display:grid;gap:2px}
+.style b{font-size:15px}.style small{font-size:12px;color:var(--soft);line-height:1.3}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.row input[type=color]{width:52px;height:36px;border:1px solid var(--line);border-radius:8px;background:none;padding:2px}
+#lines{list-style:none;padding:0;margin:12px 0;display:grid;gap:8px}
+#lines li{display:flex;gap:10px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+#lines li.cut .t{text-decoration:line-through;color:var(--soft)}
+.keep input{width:22px;height:22px;margin:2px 0 0;accent-color:var(--accent)}
+.t{flex:1;outline:none;border-radius:6px;padding:0 2px}
+.t:focus{background:var(--bg)}
+label.field{display:grid;gap:6px;font-weight:600;margin:12px 0}
+label.field input{font:inherit;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
+.stage{display:flex;justify-content:center;margin:12px 0}
+#canvas,#out{max-width:100%;max-height:62vh;border-radius:14px;background:#000}
+#src{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.msg{color:var(--danger);min-height:1.4em}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <section data-screen="gate" hidden>
+    <div class="hero">
+      <div class="brand">Cutroom</div>
+      <h1>Enter the code</h1>
+      <form id="gate-form"><label class="field">Code<input id="gate-code" autocomplete="off" autocapitalize="off"></label>
+      <p class="msg" id="gate-msg"></p><button class="primary">Open</button></form>
+    </div>
+  </section>
+
+  <section data-screen="home" hidden>
+    <div class="hero">
+      <div class="brand">Cutroom</div>
+      <h1>Turn a talking clip into a ready-to-post video</h1>
+      <ul class="steps"><li>Cuts out the pauses</li><li>Adds captions in the style you pick</li><li>Punch-ins and colour look</li><li>Your video never leaves your phone</li></ul>
+      <label class="opt"><input type="checkbox" id="accurate" checked> More accurate words (bigger download the first time)</label>
+    </div>
+    <input type="file" id="file" accept="video/*" hidden>
+    <div class="dock"><button class="primary" id="pick">Choose a video</button></div>
+  </section>
+
+  <section data-screen="work" hidden>
+    <div class="hero">
+      <div class="brand">Cutroom</div>
+      <h1>Working on it</h1>
+      <div class="track"><div class="bar" data-bar></div></div>
+      <p class="status" data-status role="status">Starting...</p>
+      <p class="soft">Keep this screen open. The first video takes longer while the listening model downloads.</p>
+      <button class="secondary" id="work-back" hidden>Start again</button>
+    </div>
+  </section>
+
+  <section data-screen="style" hidden>
+    <div class="brand">Step 1 of 2</div>
+    <h2>Pick a style</h2>
+    <p class="soft">Each picture shows the look. Tap one.</p>
+    <div class="styles" id="styles"></div>
+    <div class="row"><span>Highlight colour<br><small class="soft">the words and topics you want people to focus on</small></span><input type="color" id="accent" value="#656D43" aria-label="Highlight colour"></div>
+    <div class="row"><span>Background colour<br><small class="soft">graphic cards and caption boxes</small></span><input type="color" id="bgc" value="#14150F" aria-label="Background colour"></div>
+    <label class="row"><span>Vertical (Reels, TikTok, Shorts)</span><input type="checkbox" id="vertical" checked style="width:22px;height:22px;accent-color:var(--accent)"></label>
+    <div class="dock"><button class="primary" id="style-next">Next</button></div>
+  </section>
+
+  <section data-screen="words" hidden>
+    <div class="brand">Step 2 of 2</div>
+    <h2>Check the words</h2>
+    <p class="soft">Untick a line to cut it out. Tap any words to fix a caption.</p>
+    <ol id="lines"></ol>
+    <label class="field">Words to highlight (optional)<input id="keys" placeholder="e.g. free, gym, protein" autocapitalize="off"></label>
+    <label class="row"><span>Auto b-roll graphics<br><small class="soft">numbers you say and your highlight words become animated cards</small></span><input type="checkbox" id="gfx" checked style="width:22px;height:22px;accent-color:var(--accent)"></label>
+    <div class="dock"><button class="primary" id="make">Make my video</button></div>
+  </section>
+
+  <section data-screen="render" hidden>
+    <div class="brand">Cutroom</div>
+    <h2>Making your video</h2>
+    <p class="soft">It plays through once while it records. Keep this screen open and on.</p>
+    <div class="track"><div class="bar" data-bar></div></div>
+    <p class="status" data-status role="status"></p>
+    <div class="stage"><canvas id="canvas"></canvas></div>
+  </section>
+
+  <section data-screen="done" hidden>
+    <div class="brand">Done</div>
+    <h2>Your video is ready</h2>
+    <div class="stage"><video id="out" controls playsinline></video></div>
+    <p class="soft" id="done-note"></p>
+    <div class="dock"><a class="primary" id="download" download>Download</a></div>
+    <button class="secondary" id="share">Share / save to Photos</button>
+    <button class="secondary" id="again">Try another style</button>
+    <button class="secondary" id="new">New video</button>
+  </section>
+</main>
+<video id="src" playsinline preload="auto"></video>
+<script type="module" src="app.js"></script>
+</body>
+</html>

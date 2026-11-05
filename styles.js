@@ -35,6 +35,10 @@ export const STYLES = [
     pacing: "tight", zoom: [1.0, 1.0, 1.12], push: 0,
     cap: { font: "Inter", weight: 800, mode: "karaoke", upper: true, words: 3, size: 0.052, pos: 0.60, outline: 0.09 },
     accent: "#3FB6E8", bg: "#102A3A", grade: { contrast: 1.06, saturate: 1.25, warmth: 0.1 } },
+  { id: "creator-split", name: "Creator Split", blurb: "Learned from creator reels: small lowercase captions on a sky-blue box, fast cuts. Great for tool and how-to videos.",
+    pacing: "tight", zoom: [1.0, 1.0, 1.06], push: 0,
+    cap: { font: "Inter", weight: 600, mode: "box", upper: false, words: 3, size: 0.040, pos: 0.52, outline: 0.06 },
+    accent: "#FFFFFF", bg: "#6CB4E4", grade: { contrast: 1.04, saturate: 1.05 } },
 ];
 
 export const PACING = {

@@ -113,7 +113,7 @@ def main():
                 "commit", "-m", "Update site logins")
         if "nothing to commit" in (r.stdout + r.stderr):
             print("No login changes to publish.")
-        p = subprocess.run(["git", "-C", HERE, "push", "origin", "main"], text=True)
+        p = subprocess.run(["git", "-C", HERE, "push", "origin", "HEAD:main"], text=True)
         print("Published - live in about a minute." if p.returncode == 0 else
               "Couldn't publish (GitHub sign-in?). Ask Claude to put it online.")
 

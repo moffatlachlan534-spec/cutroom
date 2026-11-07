@@ -15,8 +15,10 @@ Any static host works - the folder is the whole site (leave out `_test/`):
 - GitHub Pages: push this folder to a repository, Settings -> Pages -> deploy from the main branch.
 - Cloudflare Pages / Netlify: drag and drop the folder.
 
-## Passcode (optional)
-`python make_passcode.py "your code"` then re-upload `config.js`. `--off` removes it.
+## Logins (Lachlan is admin)
+Everyone gets their own code. Double-click `USERS.bat` (or `Videos\Jobs\SITE-LOGINS.bat`):
+add a person (it makes them a code), remove a person, then Publish. Or: `python users.py add "Sammy"`,
+`python users.py remove "Sammy"`, `python users.py publish`. Plain codes stay in `codes.txt` on the laptop only.
 
 ## Local test
 `python -m http.server 8767` in this folder, open http://localhost:8767

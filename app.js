@@ -2,7 +2,7 @@
 // 1 choose a video -> 2 it listens (Whisper, in the browser) -> 3 pick a style ->
 // 4 check the words (drop lines, fix captions) -> 5 it records the edit -> 6 download.
 import { STYLES, PACING, readable } from "./styles.js";
-import { PASSCODE_HASH } from "./config.js";
+import { USERS } from "./config.js";
 
 const $ = (s) => document.querySelector(s);
 const screens = [...document.querySelectorAll("[data-screen]")];
@@ -25,15 +25,23 @@ async function sha(t) {
   const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t.trim().toLowerCase()));
   return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join("");
 }
+// Each person has their own code (USERS in config.js). A removed person is locked out on their next visit.
+function welcome(u) {
+  const hi = $("#hello");
+  if (hi) { hi.textContent = u ? `Hi ${u.name}` : ""; hi.hidden = !u; }
+  show("home");
+}
 async function gate() {
-  if (!PASSCODE_HASH || store.get("cutroom-pass") === PASSCODE_HASH) return show("home");
+  if (!USERS.length) return welcome(null);
+  const saved = USERS.find((u) => u.hash === store.get("cutroom-pass"));
+  if (saved) return welcome(saved);
   show("gate");
   $("#gate-form").onsubmit = async (e) => {
     e.preventDefault();
-    if ((await sha($("#gate-code").value)) === PASSCODE_HASH) {
-      store.set("cutroom-pass", PASSCODE_HASH);
-      show("home");
-    } else $("#gate-msg").textContent = "That code isn't right.";
+    const h = await sha($("#gate-code").value);
+    const u = USERS.find((x) => x.hash === h);
+    if (u) { store.set("cutroom-pass", h); welcome(u); }
+    else $("#gate-msg").textContent = "That code isn't right. Ask Lachlan for yours.";
   };
 }
 

@@ -8,5 +8,9 @@ export const USERS = [
   "name": "Lachlan",
   "hash": "1cda51d8e2bd6407aee14fd43451a320b75dd9c0aa326754edf8c9d4d6d2e15a",
   "admin": true
+ },
+ {
+  "name": "Sammy",
+  "hash": "d70c564877983ac7e14e364db9a8da164997e80ec5f3a1e815e4d4773057d814"
  }
 ];

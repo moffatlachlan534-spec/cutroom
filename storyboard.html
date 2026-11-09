@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Your storyboard</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#14150f">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@700&family=Inter:wght@400;600;800&display=swap">
+<link rel="stylesheet" href="forms.css?v=2">
+<style>
+/* the comic page: same look as Story Lab, readable on a phone */
+.comic{background:#fff;color:#16151a;border:3px solid #16151a;box-shadow:5px 5px 0 #16151a;padding:12px;display:grid;gap:10px;margin-top:16px}
+.comic h2{font-family:Bangers,Impact,sans-serif;font-weight:400;font-size:34px;letter-spacing:.03em;margin:0;padding:0;border:0;line-height:1}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tags span{font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;border:2px solid #16151a;padding:1px 7px;background:#d9f0fb}
+.tags span+span{background:#fff2c2}
+.hook{font-family:"Comic Neue","Comic Sans MS",sans-serif;font-weight:700;font-size:18px;background:#ffd23a;border:2px solid #16151a;padding:8px 12px;margin:0}
+.hook b{display:block;font:800 11px Inter,sans-serif;text-transform:uppercase;letter-spacing:.08em}
+.panels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.panel{border:3px solid #16151a;background:#fff;display:flex;flex-direction:column;position:relative;min-width:0}
+.panel:first-child,.panel:last-child:nth-child(even){grid-column:1/-1}
+.panel .n{position:absolute;top:-3px;left:-3px;background:#16151a;color:#fff;font-family:Bangers,Impact,sans-serif;font-size:15px;padding:0 6px}
+.panel svg{display:block;width:100%;height:auto;aspect-ratio:16/10;border-bottom:3px solid #16151a}
+.panel:first-child svg,.panel:last-child:nth-child(even) svg{aspect-ratio:16/7}
+.cap{font-size:13px;background:#fff2c2;padding:5px 8px;border-bottom:2px solid #16151a}
+.says{font-family:"Comic Neue","Comic Sans MS",sans-serif;font-weight:700;font-size:15px;padding:7px 9px}
+.says:empty{display:none}
+.ost{margin:0 9px 9px;font-family:Bangers,Impact,sans-serif;font-size:16px;background:#16151a;color:#ffd23a;padding:1px 7px;align-self:flex-start}
+.ost:empty{display:none}
+.choice{display:grid;gap:10px;margin-top:18px}
+</style>
+</head>
+<body>
+<main>
+  <div class="brand" id="brand">Cutroom</div>
+  <h1 id="title">Your storyboard</h1>
+  <p class="soft" id="intro">Here's the plan for your video, shot by shot. Have a look, then tell us if it's good to go or what to change.</p>
+  <p class="msg" id="bad" hidden>This link is missing the storyboard. Ask <span class="owner">us</span> to send it again.</p>
+  <div class="comic" id="comic" hidden></div>
+
+  <section class="choice noprint" id="choice" hidden>
+    <button class="primary" type="button" id="yes">Looks good, go ahead</button>
+    <label>Or tell us what to change<textarea id="change" rows="3" placeholder="e.g. start with the pool, not the kitchen"></textarea></label>
+    <button class="secondary" type="button" id="no">Send my changes</button>
+  </section>
+
+  <div class="done" id="done" hidden>
+    <p id="doneMsg"></p>
+    <button class="primary" type="button" id="share">Send it</button>
+    <a class="secondary" id="mail" hidden>Email it</a>
+    <button class="secondary" type="button" id="copy">Copy it</button>
+    <p class="fine" id="copied"></p>
+    <pre id="out" hidden style="white-space:pre-wrap"></pre>
+  </div>
+</main>
+<script type="module">
+import { BUSINESS } from "./forms-config.js";
+import { scene, SHOTS, esc } from "./comic.js";
+const $ = (s) => document.querySelector(s);
+$("#brand").textContent = BUSINESS.name;
+document.querySelectorAll(".owner").forEach((e) => (e.textContent = BUSINESS.owner));
+let B = null;
+try { const m = location.hash.match(/b=([A-Za-z0-9_-]+)/); if (m) B = JSON.parse(decodeURIComponent(escape(atob(m[1].replace(/-/g, "+").replace(/_/g, "/"))))); } catch { B = null; }
+if (!B || !Array.isArray(B.panels)) $("#bad").hidden = false;
+else {
+  $("#title").textContent = B.client ? `${B.client}: your storyboard` : "Your storyboard";
+  $("#comic").hidden = false; $("#choice").hidden = false;
+  $("#comic").innerHTML = `<h2>${esc(B.title)}</h2><div class="tags">${B.format ? `<span>${esc(B.format)}</span>` : ""}${B.length ? `<span>${esc(B.length)}</span>` : ""}</div>
+    ${B.angle ? `<p style="margin:0">${esc(B.angle)}</p>` : ""}<p class="hook"><b>First line</b>"${esc(B.hook)}"</p>
+    <div class="panels">${B.panels.map((p, i) => `<div class="panel"><span class="n">${i + 1}</span>${scene(SHOTS.includes(p.shot) ? p.shot : "talk-close", i, p.text)}
+      <div class="cap">${esc(p.action)}</div><div class="says">${esc(p.says)}</div><div class="ost">${p.shot === "text-card" ? "" : esc(p.text)}</div></div>`).join("")}</div>`;
+  const reply = (ok) => {
+    const change = $("#change").value.trim();
+    if (!ok && !change) { $("#change").focus(); $("#change").classList.add("missing"); return; }
+    const text = ok ? `Storyboard approved: "${B.title}" for ${B.client || "us"}. Good to go ahead.` : `Changes for the storyboard "${B.title}" (${B.client || ""}):\n${change}`;
+    $("#out").textContent = text; $("#choice").hidden = true; $("#done").hidden = false;
+    $("#doneMsg").textContent = ok ? `Great. Send this to ${BUSINESS.owner} so filming can be booked:` : `Send your changes to ${BUSINESS.owner}:`;
+    if (BUSINESS.email) { const m = $("#mail"); m.hidden = false; m.href = `mailto:${BUSINESS.email}?subject=${encodeURIComponent("Storyboard - " + B.title)}&body=${encodeURIComponent(text)}`; }
+    $("#share").hidden = !navigator.share && !BUSINESS.email;
+    $("#share").onclick = async () => { if (navigator.share) { try { await navigator.share({ title: "Storyboard reply", text }); } catch {} } else $("#mail").click(); };
+    $("#copy").onclick = async () => { try { await navigator.clipboard.writeText(text); $("#copied").textContent = "Copied."; } catch { $("#out").hidden = false; } };
+  };
+  $("#yes").onclick = () => reply(true);
+  $("#no").onclick = () => reply(false);
+}
+</script>
+</body>
+</html>

@@ -9,8 +9,9 @@ main{max-width:600px;margin:0 auto;padding:calc(24px + env(safe-area-inset-top))
 h1{font-size:30px;line-height:1.15;margin:6px 0 8px;text-wrap:balance}
 h2{font-size:19px;margin:28px 0 4px;padding-top:16px;border-top:1px solid var(--line)}
 p{margin:0 0 12px}.soft{color:var(--soft)}
-label{display:grid;gap:6px;font-weight:600;margin:14px 0}
-label small{font-weight:400;color:var(--soft)}
+label{display:block;font-weight:600;margin:14px 0}
+label small{display:block;font-weight:400;color:var(--soft);margin-top:2px}
+label>input,label>textarea,label>select{display:block;margin-top:6px}
 input,textarea,select{font:inherit;width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
 textarea{min-height:88px;resize:vertical}
 input:focus,textarea:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px}

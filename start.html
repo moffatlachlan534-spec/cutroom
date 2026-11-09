@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Start your videos</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#14150f">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap">
+<link rel="stylesheet" href="forms.css">
+</head>
+<body>
+<main>
+  <div class="brand" id="brand">Cutroom</div>
+  <h1>Let's make your videos</h1>
+  <p class="soft">About 5 minutes. Tell us about your business and what you want from video, and we'll come back with ideas. Only the starred questions are required.</p>
+
+  <form id="f" novalidate autocomplete="on">
+    <h2>About you</h2>
+    <label>Business name <span class="req">*</span><input name="Business name" required autocomplete="organization"></label>
+    <label>Your name <span class="req">*</span><input name="Contact name" required autocomplete="name"></label>
+    <label>Phone<input name="Phone" type="tel" autocomplete="tel"></label>
+    <label>Email<input name="Email" type="email" autocomplete="email"></label>
+    <label>Where you're based<input name="Location" placeholder="e.g. Palmerston, NT"></label>
+    <label>Website and social links <small>One per line: website, Instagram, TikTok, Facebook, Google listing.</small><textarea name="Links" rows="3"></textarea></label>
+
+    <h2>Your business</h2>
+    <label>What do you do? <span class="req">*</span><small>What you sell or offer, in a sentence or two.</small><textarea name="What they do" required></textarea></label>
+    <label>Who are your customers?<small>Who buys from you, and who you'd like more of.</small><textarea name="Customers"></textarea></label>
+    <label>What makes you different?<textarea name="What makes them different"></textarea></label>
+
+    <h2>Your videos</h2>
+    <label>What should the videos do for you? <span class="req">*</span></label>
+    <div class="checks" data-group="Goals">
+      <label><input type="checkbox" value="More enquiries or bookings">More enquiries or bookings</label>
+      <label><input type="checkbox" value="Sell a product, property or service">Sell something specific</label>
+      <label><input type="checkbox" value="Build trust and get known">Build trust and get known</label>
+      <label><input type="checkbox" value="Grow followers">Grow followers</label>
+      <label><input type="checkbox" value="Recruit staff">Recruit staff</label>
+    </div>
+    <label>Anything else about the goal?<input name="Goal details"></label>
+    <label>Where will you post them?</label>
+    <div class="checks" data-group="Platforms">
+      <label><input type="checkbox" value="Instagram">Instagram</label><label><input type="checkbox" value="TikTok">TikTok</label>
+      <label><input type="checkbox" value="Facebook">Facebook</label><label><input type="checkbox" value="YouTube">YouTube</label>
+      <label><input type="checkbox" value="LinkedIn">LinkedIn</label><label><input type="checkbox" value="Website">Website</label><label><input type="checkbox" value="Ads">Paid ads</label>
+    </div>
+    <label>Who will be on camera?<small>You, your team, customers, or nobody (just footage and text)?</small><input name="On camera"></label>
+    <label>Videos you like <small>Links to any videos or accounts you like the style of, and what you like about them.</small><textarea name="Videos they like"></textarea></label>
+    <label>Anything to avoid?<small>Words, topics, looks or competitors' styles you don't want.</small><textarea name="Avoid" rows="2"></textarea></label>
+
+    <h2>Your look</h2>
+    <label>Brand colours and fonts<input name="Brand colours and fonts" placeholder="e.g. navy and white, or 'see our website'"></label>
+    <label>Logo<small>A link to your logo, or say "on our website". You can also send it later.</small><input name="Logo"></label>
+    <label>How should you come across?</label>
+    <div class="checks" data-group="Tone">
+      <label><input type="checkbox" value="Friendly">Friendly</label><label><input type="checkbox" value="Premium">Premium</label>
+      <label><input type="checkbox" value="Funny">Funny</label><label><input type="checkbox" value="Expert">Expert</label>
+      <label><input type="checkbox" value="Down to earth">Down to earth</label><label><input type="checkbox" value="High energy">High energy</label>
+    </div>
+
+    <h2>Timing and budget</h2>
+    <label>When do you need the first video?<input name="Timing" placeholder="e.g. in 2 weeks, before our open day"></label>
+    <label>How many videos?<select name="How many"><option value="">Not sure yet</option><option>1 video</option><option>2-4 videos</option><option>A monthly package</option></select></label>
+    <label>Budget<select name="Budget"><option value="">Not sure yet</option><option>Under $300</option><option>$300-$800</option><option>$800-$2,000</option><option>$2,000+</option></select></label>
+    <label>Anything else we should know?<textarea name="Anything else" rows="2"></textarea></label>
+
+    <p class="msg" id="msg" role="alert"></p>
+    <button class="primary" type="submit">Finish</button>
+  </form>
+
+  <div class="done" id="done" hidden>
+    <h2 style="border:0;margin-top:0;padding-top:0">Thanks! One last step</h2>
+    <p>Send your answers to <span class="owner">us</span> with one of these buttons:</p>
+    <button class="primary" type="button" id="share">Send my answers</button>
+    <a class="secondary" id="mail" hidden>Email them</a>
+    <button class="secondary" type="button" id="copy">Copy my answers</button>
+    <p class="fine" id="copied"></p>
+    <pre id="out" hidden></pre>
+    <button class="secondary noprint" type="button" id="edit">Change an answer</button>
+  </div>
+</main>
+<script type="module">
+import { BUSINESS } from "./forms-config.js";
+const $ = (s) => document.querySelector(s);
+$("#brand").textContent = BUSINESS.name;
+document.querySelectorAll(".owner").forEach((e) => (e.textContent = BUSINESS.owner));
+const KEY = "cutroom-start-draft";
+const f = $("#f");
+// keep a draft on this phone in case they leave half way
+try { const d = JSON.parse(localStorage.getItem(KEY) || "{}"); for (const [k, v] of Object.entries(d)) { const el = f.elements[k]; if (el && typeof v === "string") el.value = v; else if (Array.isArray(v)) document.querySelectorAll(`[data-group="${k}"] input`).forEach((c) => (c.checked = v.includes(c.value))); } } catch {}
+function answers() {
+  const a = {};
+  for (const el of f.elements) if (el.name && el.value.trim()) a[el.name] = el.value.trim();
+  document.querySelectorAll("[data-group]").forEach((g) => { const v = [...g.querySelectorAll("input:checked")].map((c) => c.value); if (v.length) a[g.dataset.group] = v; });
+  return a;
+}
+f.addEventListener("input", () => { try { localStorage.setItem(KEY, JSON.stringify(answers())); } catch {} });
+function asText(a) {
+  return `NEW CLIENT FORM - ${a["Business name"] || ""}\n` + Object.entries(a).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`).join("\n") + `\n\nSent ${new Date().toLocaleDateString("en-AU")}`;
+}
+f.onsubmit = (e) => {
+  e.preventDefault();
+  document.querySelectorAll(".missing").forEach((x) => x.classList.remove("missing"));
+  const a = answers(), miss = [];
+  for (const el of f.querySelectorAll("[required]")) if (!el.value.trim()) { miss.push(el.name); el.classList.add("missing"); }
+  if (!a.Goals) { miss.push("Goals"); document.querySelector('[data-group="Goals"]').classList.add("missing"); }
+  if (miss.length) { $("#msg").textContent = "Please fill in: " + miss.join(", ") + "."; document.querySelector(".missing").scrollIntoView({ behavior: "smooth", block: "center" }); return; }
+  $("#msg").textContent = "";
+  const text = asText(a);
+  $("#out").textContent = text;
+  f.hidden = true; $("#done").hidden = false; window.scrollTo(0, 0);
+  if (BUSINESS.email) { const m = $("#mail"); m.hidden = false; m.href = `mailto:${BUSINESS.email}?subject=${encodeURIComponent("New client form - " + (a["Business name"] || ""))}&body=${encodeURIComponent(text)}`; }
+  $("#share").hidden = !navigator.share && !BUSINESS.email;
+  $("#share").onclick = async () => { if (navigator.share) { try { await navigator.share({ title: "New client form", text }); } catch {} } else $("#mail").click(); };
+  $("#copy").onclick = async () => { try { await navigator.clipboard.writeText(text); $("#copied").textContent = `Copied. Paste it into a message to ${BUSINESS.owner}.`; } catch { $("#out").hidden = false; $("#copied").textContent = "Select the text below and copy it."; } };
+};
+$("#edit").onclick = () => { f.hidden = false; $("#done").hidden = true; };
+</script>
+</body>
+</html>

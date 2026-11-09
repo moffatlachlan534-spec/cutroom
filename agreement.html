@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Video agreement</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#14150f">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap">
+<link rel="stylesheet" href="forms.css">
+</head>
+<body>
+<main>
+  <div class="brand" id="brand">Cutroom</div>
+  <h1 id="title">Your video agreement</h1>
+  <p class="soft" id="intro"></p>
+  <p class="msg" id="noQuote" hidden>This link is missing the quote details. Ask <span class="owner">us</span> to send your agreement link again.</p>
+
+  <section id="quote" hidden>
+    <h2>What you're getting</h2>
+    <p id="project"></p>
+    <div class="money" id="money"></div>
+    <p class="fine" id="validity"></p>
+
+    <h2>The agreement</h2>
+    <div class="terms" id="terms"></div>
+
+    <h2>Agree and book</h2>
+    <form id="sign" novalidate>
+      <label>Your full name <span class="req">*</span><input id="s_name" autocomplete="name" required></label>
+      <label>Business<input id="s_business" autocomplete="organization"></label>
+      <label class="agree"><input type="checkbox" id="s_ok"> <span>I've read this agreement, I agree to it, and I understand the deposit holds my booking and isn't refundable once work has started.</span></label>
+      <p class="msg" id="msg" role="alert"></p>
+      <button class="primary" type="submit">I agree</button>
+    </form>
+
+    <div class="done" id="done" hidden>
+      <h2 style="border:0;margin-top:0;padding-top:0">Agreed. Next: the deposit</h2>
+      <p id="payLine"></p>
+      <p>Then send your signed copy to <span class="owner">us</span>, and save one for yourself:</p>
+      <button class="primary noprint" type="button" id="share">Send my signed copy</button>
+      <a class="secondary noprint" id="mail" hidden>Email it</a>
+      <button class="secondary noprint" type="button" id="copy">Copy it</button>
+      <button class="secondary noprint" type="button" id="print">Save a copy (PDF)</button>
+      <p class="fine" id="copied"></p>
+      <pre id="out" hidden style="white-space:pre-wrap"></pre>
+    </div>
+  </section>
+</main>
+<script type="module">
+import { BUSINESS } from "./forms-config.js";
+const $ = (s) => document.querySelector(s);
+const money = (n) => "$" + Number(n || 0).toLocaleString("en-AU", { minimumFractionDigits: Number(n) % 1 ? 2 : 0, maximumFractionDigits: 2 });
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+$("#brand").textContent = BUSINESS.name;
+document.querySelectorAll(".owner").forEach((e) => (e.textContent = BUSINESS.owner));
+
+// The quote comes in the link: #q=<base64url JSON> made by the Cutroom Hub ("Make agreement link")
+let Q = null;
+try { const m = location.hash.match(/q=([A-Za-z0-9_-]+)/); if (m) Q = JSON.parse(decodeURIComponent(escape(atob(m[1].replace(/-/g, "+").replace(/_/g, "/"))))); } catch { Q = null; }
+if (!Q || !Q.price) { $("#noQuote").hidden = false; }
+else {
+  const price = +Q.price, depPct = Math.min(100, Math.max(0, +Q.deposit || 50)), dep = Math.round(price * depPct) / 100, bal = price - dep;
+  const rev = +Q.revisions || 2, extra = +Q.extraRev || 0, days = +Q.turnaround || 7, gst = BUSINESS.gst ? " incl. GST" : "";
+  $("#quote").hidden = false;
+  $("#title").textContent = `Video agreement: ${Q.client || ""}`;
+  $("#intro").textContent = `Between ${Q.client || "you"} and ${BUSINESS.name} (${BUSINESS.owner}${BUSINESS.abn ? ", ABN " + BUSINESS.abn : ""}), ${BUSINESS.location}. Quote date ${Q.date || ""}.`;
+  $("#project").textContent = `${Q.videos || 1} video${(+Q.videos || 1) > 1 ? "s" : ""}: ${Q.project || "short social videos"}.`;
+  $("#money").innerHTML = `<span>Total price${gst}</span><b>${money(price)}</b><span>Deposit to book (${depPct}%)</span><b>${money(dep)}</b><span class="tot">Balance, before you get the final files</span><b class="tot">${money(bal)}</b>
+    <span>Extra round of changes, if you want one</span><b>${extra ? money(extra) : "quoted"}</b>`;
+  $("#validity").textContent = `This quote is valid for ${Q.valid || 14} days.`;
+  const T = [
+    ["1. The work", `${BUSINESS.name} will plan, film (where included) and edit ${Q.videos || 1} video${(+Q.videos || 1) > 1 ? "s" : ""} as described above. ${Q.notes ? esc(Q.notes) : ""}`],
+    ["2. Deposit and payment", `<ul><li>A <b>${depPct}% deposit (${money(dep)})</b> books your spot. Work starts once it's paid.</li><li>The deposit isn't refundable once planning, filming or editing has started, because that time is booked for you.</li><li>You'll see a watermarked preview first. The <b>balance (${money(bal)})</b> is due before the final, full-quality files are sent.</li><li>Invoices are due within 7 days. Files are held until they're paid.</li></ul>`],
+    ["3. Changes (revisions)", `<ul><li><b>${rev} round${rev > 1 ? "s" : ""} of changes</b> to the edit ${rev > 1 ? "are" : "is"} included. A round is one list of changes sent together.</li><li>More rounds after that are <b>${extra ? money(extra) + " each" : "quoted before we start them"}</b>.</li><li>Changing the idea or script after you've approved it, or re-filming, is new work and is quoted separately.</li></ul>`],
+    ["4. Timing", `<ul><li>The first edit is ready about <b>${days} days</b> after filming (or after we receive your footage and details).</li><li>Please send feedback within 5 business days. If we hear nothing for 14 days after a preview, the video is treated as approved and the balance becomes due.</li><li>If you need to reschedule a shoot, give at least 48 hours' notice. A late change or no-show can be charged as a ${money(Math.min(dep, Q.shootFee || dep))} rebooking fee.</li></ul>`],
+    ["5. Cancelling", `<ul><li>If you cancel before any work starts, the deposit is refunded.</li><li>If you cancel after work starts, the deposit is kept. If filming or editing is already done, you pay for the work done up to that point (up to the full price).</li></ul>`],
+    ["6. Using the videos", `<ul><li>Once paid in full, you can use the final videos for your own business marketing, forever, on any platform.</li><li>${BUSINESS.name} keeps the raw footage and project files, and may show the finished work in its own portfolio unless you say no in writing.</li><li>Music and stock clips are licensed for your videos only. Don't reuse them separately.</li></ul>`],
+    ["7. Your part", `<ul><li>You confirm you have permission to film the places, people and products in the videos, and that anything you give us (logos, photos, claims, prices) is yours to use and accurate.</li><li>You approve the facts in each video (prices, addresses, offers) before it's posted.</li></ul>`],
+    ["8. The fine print", `<ul><li>${BUSINESS.name} can't promise a number of views, likes or sales.</li><li>Its total responsibility under this agreement is limited to the amount you've paid. Nothing here takes away your rights under Australian Consumer Law.</li><li>This agreement is under the laws of the Northern Territory, Australia.</li></ul>`],
+  ];
+  $("#terms").innerHTML = T.map(([h, b]) => `<h3>${h}</h3>${b.startsWith("<ul>") ? b : `<p>${b}</p>`}`).join("");
+  $("#payLine").innerHTML = `Please pay the <b>${money(dep)}</b> deposit. ${esc(BUSINESS.payment)} Use <b>${esc(Q.client || "your business name")}</b> as the reference.`;
+
+  $("#sign").onsubmit = (e) => {
+    e.preventDefault();
+    const name = $("#s_name").value.trim();
+    if (!name || !$("#s_ok").checked) { $("#msg").textContent = !name ? "Type your full name." : "Tick the box to agree."; return; }
+    $("#msg").textContent = "";
+    const when = new Date().toLocaleString("en-AU", { dateStyle: "long", timeStyle: "short" });
+    const plain = $("#terms").innerText.replace(/\n{3,}/g, "\n\n");
+    const text = `SIGNED VIDEO AGREEMENT\n${$("#intro").textContent}\n\nWork: ${$("#project").textContent}\nTotal ${money(price)}${gst}. Deposit ${money(dep)} (${depPct}%). Balance ${money(bal)}. Changes included: ${rev}. Extra rounds: ${extra ? money(extra) : "quoted"}.\n\n${plain}\n\nAgreed by: ${name}${$("#s_business").value.trim() ? " (" + $("#s_business").value.trim() + ")" : ""}\nDate: ${when}\nQuote ref: ${location.hash.slice(3, 15)}`;
+    $("#out").textContent = text;
+    $("#sign").innerHTML = `<p><b>Agreed by ${esc(name)}</b> on ${esc(when)}.</p>`;
+    $("#done").hidden = false; $("#done").scrollIntoView({ behavior: "smooth" });
+    if (BUSINESS.email) { const m = $("#mail"); m.hidden = false; m.href = `mailto:${BUSINESS.email}?subject=${encodeURIComponent("Signed agreement - " + (Q.client || name))}&body=${encodeURIComponent(text)}`; }
+    $("#share").hidden = !navigator.share && !BUSINESS.email;
+    $("#share").onclick = async () => { if (navigator.share) { try { await navigator.share({ title: "Signed video agreement", text }); } catch {} } else $("#mail").click(); };
+    $("#copy").onclick = async () => { try { await navigator.clipboard.writeText(text); $("#copied").textContent = `Copied. Paste it into a message to ${BUSINESS.owner}.`; } catch { $("#out").hidden = false; $("#copied").textContent = "Select the text below and copy it."; } };
+    $("#print").onclick = () => window.print();
+  };
+}
+</script>
+</body>
+</html>

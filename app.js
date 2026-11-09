@@ -2,7 +2,8 @@
 // 1 choose a video -> 2 it listens (Whisper, in the browser) -> 3 pick a style ->
 // 4 check the words (drop lines, fix captions) -> 5 it records the edit -> 6 download.
 import { STYLES, PACING, readable } from "./styles.js";
-import { USERS } from "./config.js";
+// Always load the latest login list (no cached copy), so a new person's code works straight away.
+const { USERS } = await import("./config.js?v=" + Date.now()).catch(() => import("./config.js"));
 
 const $ = (s) => document.querySelector(s);
 const screens = [...document.querySelectorAll("[data-screen]")];

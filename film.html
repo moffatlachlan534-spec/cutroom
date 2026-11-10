@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Filming plan</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#14150f">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@700&family=Inter:wght@400;600;800&display=swap">
+<link rel="stylesheet" href="forms.css?v=2">
+<style>
+/* the filming plan: one job per screen section, big tap targets, readable in the sun */
+.sheet{background:#fff;color:#16151a;border:3px solid #16151a;box-shadow:5px 5px 0 #16151a;padding:14px;display:grid;gap:10px;margin-top:16px}
+.sheet h2{font-family:Bangers,Impact,sans-serif;font-weight:400;font-size:28px;letter-spacing:.03em;margin:0;padding:0;border:0;line-height:1.05}
+.sheet p,.sheet li{font-size:15px;line-height:1.45;margin:0}
+.sheet ul{margin:0;padding-left:20px;display:grid;gap:4px}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tags span{font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;border:2px solid #16151a;padding:1px 7px;background:#d9f0fb}
+.tags span+span{background:#fff2c2}
+.hook{font-family:"Comic Neue","Comic Sans MS",sans-serif;font-weight:700;font-size:18px;background:#ffd23a;border:2px solid #16151a;padding:8px 12px;margin:0}
+.hook b{display:block;font:800 11px Inter,sans-serif;text-transform:uppercase;letter-spacing:.08em}
+.count{font:800 13px Inter,sans-serif;text-transform:uppercase;letter-spacing:.06em;background:#16151a;color:#ffd23a;padding:3px 9px;justify-self:start}
+.shots{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.shots label{display:flex;gap:12px;align-items:flex-start;border:2px solid #16151a;padding:11px 12px;font-size:16px;line-height:1.35;cursor:pointer;background:#fff}
+.shots input{width:26px;height:26px;flex:none;accent-color:#3f7a3a;margin:0}
+.shots input:checked+span{text-decoration:line-through;opacity:.55}
+.beat{border:2px solid #16151a;display:grid;gap:0}
+.beat .t{font:800 12px Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;background:#16151a;color:#fff;padding:3px 9px;display:flex;justify-content:space-between;gap:8px}
+.beat .cam{background:#fff2c2;padding:6px 9px;font-size:14px;border-bottom:2px solid #16151a}
+.beat .say{font-family:"Comic Neue","Comic Sans MS",sans-serif;font-weight:700;font-size:18px;line-height:1.35;padding:9px}
+.beat .say:empty{display:none}
+.beat .extra{padding:0 9px 9px;font-size:13.5px;display:grid;gap:3px}
+.beat .extra b{font-weight:800}
+.beat .extra:empty{display:none}
+.send{display:grid;gap:10px;margin-top:18px}
+a.primary{display:block;text-align:center;text-decoration:none}
+</style>
+</head>
+<body>
+<main>
+  <div class="brand" id="brand">Cutroom</div>
+  <h1 id="title">Filming plan</h1>
+  <p class="soft" id="intro">Everything to film, in order. Tick each shot as you get it.</p>
+  <p class="msg" id="bad" hidden>This link is missing the filming plan. Ask <span class="owner">us</span> to send it again.</p>
+  <div id="plan" hidden>
+    <div class="sheet" id="top"></div>
+    <div class="sheet" id="shotsBox" hidden><h2>Shots to get</h2><span class="count" id="count"></span><ul class="shots" id="shots"></ul></div>
+    <div class="sheet" id="beatsBox" hidden><h2>What to say and show</h2><div id="beats" style="display:grid;gap:10px"></div></div>
+    <div class="sheet" id="notesBox" hidden></div>
+    <section class="send noprint">
+      <div class="sheet"><h2>When you're done</h2>
+        <ul><li>Send the <b>original files</b>, not screenshots or clips forwarded through a chat app (those lose quality).</li>
+          <li>Send <b>every take</b>, even the messy ones. The edit picks the best.</li></ul>
+        <a class="primary" id="up" target="_blank" rel="noopener" hidden>Upload the clips here</a>
+        <p id="noUp" hidden>Send the clips to <span class="owner">us</span> the usual way.</p>
+      </div>
+      <button class="primary" type="button" id="tell">Tell <span class="owner">us</span> it's filmed</button>
+      <button class="secondary" type="button" id="copy">Copy the message instead</button>
+      <p class="fine" id="copied"></p>
+      <pre id="out" hidden style="white-space:pre-wrap"></pre>
+    </section>
+  </div>
+</main>
+<script type="module">
+import { BUSINESS } from "./forms-config.js";
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+$("#brand").textContent = BUSINESS.name;
+document.querySelectorAll(".owner").forEach((e) => (e.textContent = BUSINESS.owner));
+
+const b64 = (s) => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));
+async function read() {
+  try {
+    const z = location.hash.match(/z=([A-Za-z0-9_-]+)/), f = location.hash.match(/f=([A-Za-z0-9_-]+)/);
+    if (z) {   // squeezed, so the link stays short enough to text
+      const text = await new Response(new Blob([b64(z[1])]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).text();
+      return JSON.parse(text);
+    }
+    if (f) return JSON.parse(new TextDecoder().decode(b64(f[1])));
+  } catch { /* fall through */ }
+  return null;
+}
+const F = await read();
+if (!F || !(Array.isArray(F.beats) || Array.isArray(F.shots))) $("#bad").hidden = false;
+else {
+  const key = "cutroom-film:" + location.hash.slice(-40);
+  let done = [];
+  try { done = JSON.parse(localStorage.getItem(key) || "[]"); } catch { done = []; }
+  $("#title").textContent = F.c ? `${F.c}: filming plan` : "Filming plan";
+  $("#plan").hidden = false;
+  const film = F.film || {};
+  $("#top").innerHTML = `<h2>${esc(F.t || "The video")}</h2><div class="tags">${F.len ? `<span>${esc(F.len)}</span>` : ""}${F.for ? `<span>${esc(F.for)}</span>` : ""}</div>
+    ${F.hook ? `<p class="hook"><b>It opens with</b>"${esc(F.hook)}"</p>` : ""}
+    ${film.shape ? `<p><b>Hold the camera:</b> ${esc(film.shape)}</p>` : ""}
+    ${(film.framing || []).length ? `<ul>${film.framing.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+    ${film.setup ? `<p>${esc(film.setup)}</p>` : ""}
+    ${(F.props || []).length ? `<p><b>Bring:</b> ${esc(F.props.join(", "))}</p>` : ""}`;
+  const shots = F.shots || [];
+  const count = () => { $("#count").textContent = `${done.filter((i) => i < shots.length).length} of ${shots.length} filmed`; };
+  if (shots.length) {
+    $("#shotsBox").hidden = false;
+    $("#shots").innerHTML = shots.map((s, i) => `<li><label><input type="checkbox" data-i="${i}"${done.includes(i) ? " checked" : ""}><span>${esc(s)}</span></label></li>`).join("");
+    $("#shots").addEventListener("change", (e) => {
+      const i = +e.target.dataset.i;
+      done = e.target.checked ? [...new Set([...done, i])] : done.filter((x) => x !== i);
+      try { localStorage.setItem(key, JSON.stringify(done)); } catch { /* still works this visit */ }
+      count();
+    });
+    count();
+  }
+  const beats = F.beats || [];
+  if (beats.length) {
+    $("#beatsBox").hidden = false;
+    $("#beats").innerHTML = beats.map((x, i) => `<div class="beat"><div class="t"><span>${i + 1}</span><span>${esc(x.time || "")}</span></div>
+      ${x.shot ? `<div class="cam">${esc(x.shot)}</div>` : ""}<div class="say">${esc(x.says || "")}</div>
+      <div class="extra">${x.text ? `<span><b>On screen later:</b> ${esc(x.text)}</span>` : ""}${x.broll ? `<span><b>Also film:</b> ${esc(x.broll)}</span>` : ""}${x.tip ? `<span><b>Tip:</b> ${esc(x.tip)}</span>` : ""}</div></div>`).join("");
+  }
+  if ((F.notes || []).length) {
+    $("#notesBox").hidden = false;
+    $("#notesBox").innerHTML = `<h2>For whoever's on camera</h2><ul>${F.notes.map((n) => `<li>${esc(n)}</li>`).join("")}</ul>`;
+  }
+  if (typeof F.up === "string" && /^https:\/\//i.test(F.up)) { $("#up").hidden = false; $("#up").href = F.up; } else $("#noUp").hidden = false;
+  const message = () => {
+    const missing = shots.filter((_, i) => !done.includes(i));
+    return `Filmed: "${F.t || "the video"}"${F.c ? " for " + F.c : ""}. ${shots.length ? `${shots.length - missing.length} of ${shots.length} shots done.` : ""}`
+      + (missing.length ? `\nStill to get: ${missing.join("; ")}` : "") + (F.up ? "\nThe clips are uploaded." : "\nSending the clips now.");
+  };
+  $("#tell").onclick = async () => {
+    const text = message(); $("#out").textContent = text;
+    if (navigator.share) { try { await navigator.share({ title: "Filmed", text }); return; } catch { /* cancelled: fall back to copy */ } }
+    if (BUSINESS.email) location.href = `mailto:${BUSINESS.email}?subject=${encodeURIComponent("Filmed - " + (F.t || ""))}&body=${encodeURIComponent(text)}`;
+    else $("#copy").click();
+  };
+  $("#copy").onclick = async () => {
+    const text = message(); $("#out").textContent = text;
+    try { await navigator.clipboard.writeText(text); $("#copied").textContent = "Copied. Paste it in a message."; } catch { $("#out").hidden = false; }
+  };
+}
+</script>
+</body>
+</html>

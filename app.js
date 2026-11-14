@@ -336,7 +336,17 @@ function onColor(hex) {
 const norm = (t) => t.toLowerCase().replace(/[^a-z0-9']/g, "");
 
 // ---------- 5: record the edit (plays each piece, draws it with the style, records canvas + sound)
-$("#make").onclick = () => make().catch((err) => { show("work"); status("Recording failed: " + err.message, 0); $("#work-back").hidden = false; });
+$("#make").onclick = () => {
+  // iPhone Safari only lets sound and unmuted playback start inside the tap itself, so unlock both here, before any waiting
+  const AC = window.AudioContext || window.webkitAudioContext;
+  S.ac = S.ac || new AC();
+  S.ac.resume().catch(() => {});
+  const v = $("#src");
+  if (v.src !== S.url) v.src = S.url;
+  v.muted = false;
+  S.unlock = v.play().then(() => v.pause()).catch(() => {});
+  make().catch((err) => { show("work"); status("Recording failed: " + err.message, 0); $("#work-back").hidden = false; });
+};
 
 async function make() {
   const { segs, caps, total } = plan();
@@ -349,9 +359,11 @@ async function make() {
   ch.keys = keys;
   const gfx = $("#gfx").checked ? graphics(caps, keys, total) : [];
   show("render");
+  status("Getting ready...", 0);
   const v = $("#src");
-  v.src = S.url;
+  if (v.src !== S.url) v.src = S.url;
   v.muted = false;
+  await S.unlock;
   await new Promise((r) => (v.readyState >= 1 ? r() : (v.onloadedmetadata = r)));
   const vw = v.videoWidth, vh = v.videoHeight;
   const portrait = vh >= vw;
@@ -367,7 +379,8 @@ async function make() {
   const AC = window.AudioContext || window.webkitAudioContext;
   const ac = S.ac || (S.ac = new AC());
   if (!S.srcNode) S.srcNode = ac.createMediaElementSource(v);
-  await ac.resume();
+  await Promise.race([ac.resume(), new Promise((r) => setTimeout(r, 3000))]);
+  if (ac.state !== "running") throw new Error("the sound didn't start. Tap Start again, then Make my video");
   const comp = ac.createDynamicsCompressor();
   comp.threshold.value = -24; comp.ratio.value = 3; comp.attack.value = 0.005; comp.release.value = 0.2;
   const gain = ac.createGain(); gain.gain.value = 1.4;
@@ -396,6 +409,25 @@ async function make() {
     status(`Making your video... ${Math.min(99, Math.round((t / total) * 100))}%`, t / total);
     requestAnimationFrame(draw);
   };
+  // screen locked or another app opened: the page stops drawing, so pause the video and the recording
+  // (otherwise the video gets a frozen picture with the sound still running) and carry on when they're back
+  let live = false, away = null;
+  const onVis = () => {
+    if (document.hidden && away === null) {
+      away = live;
+      live = false;
+      v.pause();
+      if (rec.state === "recording") rec.pause();
+      status("Paused - come back to this screen to carry on", null);
+    } else if (!document.hidden && away !== null) {
+      const wasLive = away;
+      away = null;
+      v.play().then(() => requestAnimationFrame(() => requestAnimationFrame(() => {
+        if (wasLive && running) { live = true; rec.resume(); }
+      })));
+    }
+  };
+  document.addEventListener("visibilitychange", onVis);
   rec.start(250);
   rec.pause();
   requestAnimationFrame(draw);
@@ -403,16 +435,24 @@ async function make() {
     seg = s;
     v.currentTime = s.in;
     await new Promise((r) => (v.onseeked = r));
+    await new Promise((r) => {                       // never start a piece while the screen is away
+      const f = () => { if (!document.hidden) { document.removeEventListener("visibilitychange", f); r(); } };
+      document.addEventListener("visibilitychange", f);
+      f();
+    });
     await v.play();
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));   // fresh frame drawn
+    live = true;
     rec.resume();
     await new Promise((r) => {
       const tick = () => (v.currentTime >= s.out || v.ended ? r() : requestAnimationFrame(tick));
       tick();
     });
-    rec.pause();
+    live = false;
+    if (rec.state === "recording") rec.pause();
     v.pause();
   }
+  document.removeEventListener("visibilitychange", onVis);
   running = false;
   rec.stop();
   await stopped;
